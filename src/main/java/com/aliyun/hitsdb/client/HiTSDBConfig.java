@@ -34,6 +34,13 @@ public class HiTSDBConfig {
 		private int batchPutTimeLimit = 300;
 		private int maxTPS = -1;
 
+		/**
+		 * add by lizhiyang 2019-01-05
+		 * 解决http chunked，增加开关类和每次发送内容大小设置
+		 */
+		private boolean batchPutByContentSizeSwitch = false;
+		private int batchPutByContentSize = 4096;
+
 		private String host;
 		private int port = 8242;
 
@@ -73,6 +80,16 @@ public class HiTSDBConfig {
 
 		public Builder() {
 
+		}
+
+		public Builder batchPutByContentSizeSwitch(boolean enable) {
+			this.batchPutByContentSizeSwitch = enable;
+			return this;
+		}
+
+		public Builder batchPutByContentSize(int maxSize) {
+			this.batchPutByContentSize = maxSize;
+			return this;
 		}
 
 		public Builder putRequestLimit(int limit) {
@@ -190,6 +207,8 @@ public class HiTSDBConfig {
 			hiTSDBConfig.httpKeepaliveTime = this.httpKeepaliveTime;
 			hiTSDBConfig.maxTPS = this.maxTPS;
 			hiTSDBConfig.asyncPut = this.asyncPut;
+			hiTSDBConfig.batchPutByContentSizeSwitch = this.batchPutByContentSizeSwitch;
+			hiTSDBConfig.batchPutByContentSize = this.batchPutByContentSize;
 
 			hiTSDBConfig.addresses = this.addresses;
 			if (this.putRequestLimitSwitch && this.putRequestLimit <= 0) {
@@ -322,6 +341,9 @@ public class HiTSDBConfig {
 	private int batchPutTimeLimit;
 
 	private int maxTPS;
+
+	private boolean batchPutByContentSizeSwitch;
+	private int batchPutByContentSize;
 	
 	private String host;
 	
@@ -463,8 +485,15 @@ public class HiTSDBConfig {
 		this.batchPutCallback = callback;
 	}
 
+	public boolean isBatchPutByContentSizeSwitch() {
+		return batchPutByContentSizeSwitch;
+	}
 
-	public HiTSDBConfig copy(String host,int port){
+	public int getBatchPutByContentSize() {
+		return batchPutByContentSize;
+	}
+
+	public HiTSDBConfig copy(String host, int port){
 		HiTSDBConfig hiTSDBConfig = new HiTSDBConfig();
 		hiTSDBConfig.host = host;
 		hiTSDBConfig.port = port;
@@ -488,7 +517,8 @@ public class HiTSDBConfig {
 		if (this.putRequestLimitSwitch && this.putRequestLimit <= 0) {
 			hiTSDBConfig.putRequestLimit = this.httpConnectionPool;
 		}
-
+		hiTSDBConfig.batchPutByContentSizeSwitch = this.batchPutByContentSizeSwitch;
+		hiTSDBConfig.batchPutByContentSize = this.batchPutByContentSize;
 		return hiTSDBConfig;
 	}
 
