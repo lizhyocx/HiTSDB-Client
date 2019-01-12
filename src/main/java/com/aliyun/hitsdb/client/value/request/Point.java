@@ -211,6 +211,11 @@ public class Point extends JSONValue {
 	private String aggregator;
 	private String json;
 	private Long version;
+	/**
+	 * 发送失败时重试次数，重试机制需要自己在BatchPutCallback中实现，无需序列化
+	 * add by lizhiyang 2019/01/12
+	 */
+	private transient int retryTimes = 0;
 
 	public String getMetric() {
 		return metric;
@@ -376,4 +381,11 @@ public class Point extends JSONValue {
 		}
 	}
 
+	/**
+	 * 重试，返回重试次数
+	 * add by lizhiyang 2019/01/12
+	 */
+	public int retry() {
+		return ++this.retryTimes;
+	}
 }

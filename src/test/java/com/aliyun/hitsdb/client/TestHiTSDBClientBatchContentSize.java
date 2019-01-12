@@ -8,14 +8,13 @@ import com.aliyun.hitsdb.client.value.Result;
 import com.aliyun.hitsdb.client.value.request.Point;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestHiTSDBClientBatchContentSize {
@@ -25,12 +24,21 @@ public class TestHiTSDBClientBatchContentSize {
     @Before
     public void init() throws HttpClientInitException {
         BatchPutCallback pcb = new BatchPutCallback(){
-            
+            final int retryTimes = 3;
             final AtomicInteger num = new AtomicInteger();
             
             @Override
             public void failed(String address,List<Point> points,Exception ex) {
                 System.err.println("业务回调出错！" + points.size() + " error!");
+                Iterator<Point> iter = points.iterator();
+                while(iter.hasNext()) {
+                    Point point = iter.next();
+                    if(point.retry() > retryTimes) {
+                        iter.remove();
+                    } else {
+                        tsdb.put(point);
+                    }
+                }
                 ex.printStackTrace();
             }
 
@@ -77,8 +85,8 @@ public class TestHiTSDBClientBatchContentSize {
     public void after() {
         try {
             System.out.println("将要关闭");
-            tsdb.close();
-        } catch (IOException e) {
+            //tsdb.close();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -91,6 +99,16 @@ public class TestHiTSDBClientBatchContentSize {
         for(Point point : list) {
             tsdb.put(point);
         }
+    }
+
+    @Test
+    public void testPoint() throws IOException {
+        Map<String, String> tags = new HashMap<String, String>();
+        tags.put("payType", "123");
+        tags.put("money", "100");
+        Point point = Point.metric("test").tag(tags).timestamp(System.currentTimeMillis()).value(20).build();
+        tsdb.put(point);
+        System.in.read();
     }
 
 }
